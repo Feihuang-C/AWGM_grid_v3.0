@@ -1,2 +1,2 @@
-./sacdata/2007*/*.sac: waveforms of one earthquake for example
+./sacdata/2007*/*.sac: waveforms of one earthquake for example in wave field gradient analysis
 ./aniso/station_fortest/bk*.mat:  WGM results of  earthquakes in idfferent azimuth (input dataset for the example in anisotropy fitting)
