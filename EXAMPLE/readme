@@ -1,0 +1,2 @@
+./sacdata/2007*/*.sac: waveforms of one earthquake for example
+./aniso/station_fortest/bk*.mat:  results of  earthquakes in idfferent azimuth (input dataset for example of anisotropy fitting)
