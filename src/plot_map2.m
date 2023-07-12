@@ -1,5 +1,5 @@
 function plot_map2(wga,cntrprd,evID)
-suptitle(['ev=' evID '; T=' num2str(cntrprd) ' s'])
+% subtitle(['ev=' evID '; T=' num2str(cntrprd) ' s'])
 subplot(2,2,1)
 dat=wga;
 V=[dat.st(:,1) dat.st(:,2) dat.v];
