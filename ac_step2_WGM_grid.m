@@ -1,6 +1,6 @@
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Liang Chuntao 2009, v1.0; Cao Feihuang. 2022, v2.0; Cao Feihuang, 2023/07/01,v2.0
-% befor runing this program£¬you need to check the parameters file of aa_WGM_parameters.m firstly.
+% befor runing this programï¼Œyou need to check the parameters file of aa_WGM_parameters.m firstly.
 % before running the program, also check all parameters below
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -20,7 +20,7 @@ is_smooth=1;
 
 
 
-%% ¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª
+%% â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”â€”
 par.is_smooth =is_smooth; 
 par.is_overwrite =is_overwrite; 
 par.is_figure=is_figure;
@@ -391,7 +391,7 @@ hold off
 ylim(1.0./ab.pr(kmax)+[-0.5 0.5])
 xlim([1 length(envu)])
 set( gca, 'XTick', []);
-title(['V_p_h_a_s_e=' num2str(round(v*100)/100) '¡À' num2str(round(dv*1000)/1000) ' (km/s)'])
+title(['V_p_h_a_s_e=' num2str(round(v*100)/100) 'Â±' num2str(round(dv*1000)/1000) ' (km/s)'])
 hold off
 
 subplot(5,1,3)
@@ -403,7 +403,7 @@ plot(nt1:nt2,ab.theta(nt1:nt2)*180/pi,'b');
 ylim(ab.theta(kmax)*180/pi+[-45 45])
 xlim([1 length(envu)])
 set( gca, 'XTick', []);
-title(['Azimuth=' num2str(round(azmo*100)/100) '¡À' num2str(round(da*100)/100) ' (deg)'])
+title(['Azimuth=' num2str(round(azmo*100)/100) 'Â±' num2str(round(da*100)/100) ' (deg)'])
 hold off
 
 subplot(5,1,4)
@@ -415,7 +415,7 @@ plot(nt1:nt2,ab.gsprd(nt1:nt2)*1000,'b');
 ylim(ab.gsprd(kmax)*1000+40*dg*[-1 1])
 xlim([1 length(envu)])
 set( gca, 'XTick', []);
-title(['Geometrical spreading=' num2str(round(gs*100)/100) '¡À' num2str(round(dg*100)/100) ' (1/1000km)'])
+title(['Geometrical spreading=' num2str(round(gs*100)/100) 'Â±' num2str(round(dg*100)/100) ' (1/1000km)'])
 hold off
 
 subplot(5,1,5)
@@ -426,7 +426,7 @@ plot(nt1:nt2,ab.radiation(nt1:nt2),'b');
 ylim(ab.radiation(kmax)+40*dr*[-1 1])
 xlim([1 length(envu)])
 xlabel('time (s)')
-title(['Radiation pattern=' num2str(round(rd*100)/100) '¡À' num2str(round(dr*100)/100) ' (1/deg)'])
+title(['Radiation pattern=' num2str(round(rd*100)/100) 'Â±' num2str(round(dr*100)/100) ' (1/deg)'])
 hold off
 
 
@@ -953,7 +953,6 @@ end
 function  wga1=smoothWG(wga,par,cntrprd,evID)
     periods=par.periods;
     is_figure=par.is_figure;
-    is_paforr=par.is_parfor;
     vlim=par.vlim;
     vmod=par.vmod;
     smrvs=par.smrvs;
