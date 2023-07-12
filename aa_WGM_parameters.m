@@ -6,7 +6,7 @@ isfigure=1;
 %% ----- 1. info of seismic array ------------
 par.fs = '/';
 par.stinfof = './st.info'; % station information: Net Station Name stla stlo stevl
-par.ev_sac_rootpath = './EXAMPLE/sacdata/'; % root path of sac files 
+par.ev_sac_rootpath = './sacdata/'; % root path of sac files 
 par.lalim = [26 32.4];  % lat range
 par.lolim = [99.6 105.4]; % lon range
 par.cmp = 'BHZ';    % component
