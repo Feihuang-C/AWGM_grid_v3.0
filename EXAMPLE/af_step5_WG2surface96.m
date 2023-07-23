@@ -37,15 +37,15 @@ else
         parWG2sruface96(blcki,parmat)
     end
 end
-copyfile('./src/job_submit.sh',outpath)
-copyfile('./src/mpi_job_submit.sh',outpath)
-copyfile('./src/mod.d2',outpath)
-copyfile('./src/rfnt',outpath)
-copyfile('./src/stacksac2.0AJWA',outpath)
-copyfile('./src/DispInv.sh',outpath)
-copyfile('./src/run_shell_mpi.f90',outpath)
-copyfile('./src/jointinversion.sh',outpath)
-copyfile('./src/Extract_3Daniso/',[outpath '/Extract_3Daniso/'])
+copyfile('../src/job_submit.sh',outpath)
+copyfile('../src/mpi_job_submit.sh',outpath)
+copyfile('../src/mod.d2',outpath)
+copyfile('../src/rfnt',outpath)
+copyfile('../src/stacksac2.0AJWA',outpath)
+copyfile('../src/DispInv.sh',outpath)
+copyfile('../src/run_shell_mpi.f90',outpath)
+copyfile('../src/jointinversion.sh',outpath)
+copyfile('../src/Extract_3Daniso/',[outpath '/Extract_3Daniso/'])
 delete(parmat)
 
 
