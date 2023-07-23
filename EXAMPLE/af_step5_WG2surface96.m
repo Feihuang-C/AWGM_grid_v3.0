@@ -6,7 +6,7 @@ clc
 clear
 fs = '/';
 indir='./aniso/';
-infile = [indir fs 'Aniso360azmbin10onephs0_allst_smr.mat']; % input file
+infile = [indir fs 'Aniso360azmbin10onephs0_allst_smr_example.mat']; % input file
 outpath = './inv2depth2/';
 is_parfor=1;
 prdLim = [10,80];    % period range of DC
