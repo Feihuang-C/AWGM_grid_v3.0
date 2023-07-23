@@ -12,7 +12,7 @@ par.lolim = [99.6 105.4]; % lon range
 par.cmp = 'BHZ';    % component
 par.Net='T1';       % NET
 par.gridsize = 0.2;   % deg, grid size in degrees
-ddst=0.7;             % deg, isolate the reference locations (grid points) with less supporting stations  
+ddst=0.7;             % deg, parameter for deleting invalid grid points
 remakegrd = 1;        % =1, remake grid file
 
 %% ----- 2. Auto waveform pick --------
