@@ -10,9 +10,10 @@ par=aa_WGM_parameters; % load parameters
 par.is_parfor =0; 
 par.is_figure = 0;
 par.is_overwrite = 1;
-
 par.sacstr=['*' par.cmp '.sac'];
 dataF = dir([par.ev_sac_rootpath par.fs '2007*']); 
+
+
 fs=par.fs;
 par.dataF = dataF;
 wvPick_output = par.wvPick_output;
