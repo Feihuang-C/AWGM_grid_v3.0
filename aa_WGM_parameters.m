@@ -5,15 +5,15 @@ clear;
 isfigure=1; 
 %% ----- 1. info of seismic array ------------
 par.fs = '/';
-par.stinfof = './st.info'; % station information: Net Station Name stla stlo stevl
-par.ev_sac_rootpath = './sacdata/'; % root path of sac files 
-par.lalim = [26 32.4];  % lat range
-par.lolim = [99.6 105.4]; % lon range
-par.cmp = 'BHZ';    % component
-par.Net='T1';       % NET
-par.gridsize = 0.2;   % deg, grid size in degrees
-ddst=0.7;             % deg, parameter for deleting invalid grid points
-remakegrd = 1;        % =1, remake grid file
+par.stinfof = './st.info';           % station information: Net Station Name stla stlo stevl
+par.ev_sac_rootpath = './sacdata/';  % root path of sac files 
+par.lalim = [26 32.4];               % lat range
+par.lolim = [99.6 105.4];            % lon range
+par.cmp = 'BHZ';                     % component
+par.Net='T1';                        % NET
+par.gridsize = 0.2;                  % deg, grid size in degrees
+ddst=0.7;                            % deg, parameter for deleting invalid grid points
+remakegrd = 1;                       % =1, remake grid file
 
 %% ----- 2. Auto waveform pick --------
 par.wvPick_output = './wvPick/'; %output path 
