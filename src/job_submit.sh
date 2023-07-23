@@ -20,4 +20,5 @@ cp ./DispInv.sh $diri/DispInv.sh
 cd $diri
 ./DispInv.sh
 rm ./DispInv.sh
+cd ..
 done
