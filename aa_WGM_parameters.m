@@ -40,7 +40,7 @@ par.Rcof=0.7;                        % minimum correlation coefficient between t
 par.vmodtype=[ ];                    % ='ak135',reference phase velocity from AK135; =[],user difine reference phase velocity, 
 par.v_modf='./VphaseMod.mat';        % when par.vmodtype=[], user needs to give reference-velocity file here
 par.vlim=0.8;                        % outlier<median(v)-vlim  or  outlier > median(v)+vlim
-prdb=[18 50 60];      		          %period boundary for smoothing radius
+prdb=[18 50 60];      		        %period boundary for smoothing radius
 smrv=[0.4 0.3 0.4 0.5];              %deg,smoothing radius of velocity
 smra=[0.6 0.5 0.6 0.7];              %deg,smoothing radius of anisotropy
 %% ---------------------------------------------
