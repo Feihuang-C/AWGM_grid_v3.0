@@ -1,6 +1,6 @@
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Cao et al. 2022 v2.0; Cao  Feihuang, 2023/06/01,v3.0
-% befor runing this program£¬you need to check the parameters file of aa_WGM_parameters.m firstly.
+% befor runing this programÂ£Â¬you need to check the parameters file of aa_WGM_parameters.m firstly.
 % before running the program, also check all parameters below
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function ab_step1_AutoPickWaveform
@@ -8,10 +8,12 @@ clear
 close all;
 par=aa_WGM_parameters; % load parameters
 is_parfor =0; 
-par.sacstr=['*' par.cmp '.sac'];
-par.is_overwrite = 1;
 par.is_figure = 1;
+par.is_overwrite = 1;
+par.sacstr=['*' par.cmp '.sac'];
 dataF = dir([par.ev_sac_rootpath par.fs '2007*']); 
+
+
 fs=par.fs;
 par.dataF = dataF;
 wvPick_output = par.wvPick_output;
