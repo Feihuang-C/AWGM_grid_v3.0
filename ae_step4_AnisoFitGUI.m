@@ -2271,10 +2271,13 @@ for i=1:length(pdb)-1
 end
 par.smrs=smrs;
 
-load coast
-par.long=long;
-par.lat=lat;
+#load coast
+#par.long=long;
+#par.lat=lat;
 
+load coastlines
+par.long=coastlon;
+par.lat=coastlat;
 
 % --- Executes when figure1 is resized.
 function figure1_SizeChangedFcn(hObject, eventdata, handles)
