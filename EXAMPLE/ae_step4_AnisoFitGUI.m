@@ -409,7 +409,9 @@ azmo = plotpar.azmo;
 try
 subplot(handles.Plot4);
 hold off
-load coast
+load coastlines.mat
+long=coastlon;
+lat=coastlat;
 mx=long-st(1,2);
 my=lat;
 ind=mx>180|mx<-180|my>90|my<-90;
