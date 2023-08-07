@@ -2273,9 +2273,10 @@ for i=1:length(pdb)-1
 end
 par.smrs=smrs;
 
-load coast
-par.long=long;
-par.lat=lat;
+%load coast
+load coastlines.mat
+par.long=coastlon;
+par.lat=coastlat;
 
 
 % --- Executes when figure1 is resized.
