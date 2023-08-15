@@ -22,7 +22,7 @@ function varargout = STdispersion(varargin)
 
 % Edit the above text to modify the response to help STdispersion
 
-% Last Modified by GUIDE v2.5 07-Sep-2021 20:32:15
+% Last Modified by GUIDE v2.5 13-Aug-2023 13:33:00
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -54,93 +54,77 @@ function STdispersion_OpeningFcn(hObject, eventdata, handles, varargin)
 
 % Choose default command line output for STdispersion
 handles.output = hObject;
-% temp=load('D:\dyx\cfh\AutoGradANA_Grid3\aniso\wga.R.BHZ-dvazm0.3.mat');22518testwga.R.BHZ
-% par.outfile='D:\dyx\cfh\AutoGradANA_Grid3\aniso\wga.R.BHZ-dvazm0.15.mat';
-temp=load('./aniso/22518testwga.R.BHZ.mat');
-par.outfile='./aniso/testplot.mat';
-% temp=load('D:\dyx\cfh\AutoGradANA_Grid3\aniso\0706teststdNETibetAniso2180ban10vlim0.35.R.BHZ.mat');
-% par.outfile='D:\dyx\cfh\AutoGradANA_Grid3\aniso\STd22518testwga.R.BHZ.mat';
-par.periods=10:80;
+indir='E:/ETP/AutoWG_gridV5/aniso/station/';
+outdir='E:/ETP/AutoWG_gridV5/aniso/station/Pick/';
+par.isoverwrite=0;
+stfs=dir([indir 'bk*.mat']);
 
-% temp=load('J:\wga.R.BHZ.mat');
-% par.outfile='J:\Qwga.R.BHZ.mat';
-% par.periods=10:120;
 
+
+par.indir=indir;
+par.outdir=outdir;
 par.dvm=str2double(get(handles.paradvm,'string'));
 par.dviso=str2double(get(handles.paradviso,'string'));
 par.dvtance=str2double(get(handles.paradvtance,'string'));
 par.dvazm=str2double(get(handles.paradvazm,'string'));
-st=temp.stk;
-k=0;
-for sti=1:length(st)
-    if isempty(st(sti).evla)
-        k=k+1;
-        emti(k)=sti;
-    end
-end
-if k>0
-    st(emti)=[];
+
+par.stfs=stfs;
+for sti=1:length(stfs)
+    stfi=stfs(sti).name;
+    strst=strsplit(stfi,'_');
+    xi=str2double(cell2mat(strst(2)));
+    yi=str2double(cell2mat(strsplit(cell2mat(strst(3)),'.mat')));    
+    par.stloc(sti,:)=[xi,yi];
+    par.stname(sti)={stfi};    
+    try
+        load([outdir '/' stfi])        
+    catch
+        load([indir '/' stfi])
+    end    
+    for pi=1:length(wgst.periods)
+        vi=wgst.v(:,pi);
+        par.viso(sti,pi)=median(vi(~isnan(vi)));
+    end       
 end
 
-for sti=1:length(st)
-    stname(sti)=st(sti).stn;
-    par.stloc(sti,:)=[st(sti).stla,st(sti).stlo];
-    for i=1:length(par.periods);
-        visom=st(sti).v0(:,i);
-        visom(isnan(visom))=[];
-        vm(i)=median(visom);
-    end
-    prd=par.periods(~isnan(vm));
-    vm(isnan(vm))=[];
-    pv = polyfit(prd,vm,3);
-    par.viso(sti,:)=polyval(pv,par.periods);
+
+for i=1:length(par.viso(1,:))
+    visoi=par.viso(:,i);
+    par.visom(i)=median(visoi(~isnan(visoi)));
 end
 
-par.stname=stname;
-set(handles.stlist,'string',stname);
+set(handles.stlist,'string',par.stname);
 set(handles.stlist,'value',1);
-
-for i=1:length(par.periods);
-    visom=par.viso(:,i);
-    visom(isnan(visom))=[];
-    vmall(i)=median(visom);
-end
-prd=par.periods(~isnan(vmall));
-vmall(isnan(vmall))=[];
-pvmall = polyfit(prd,vmall,3);
-par.vmall=polyval(pvmall,par.periods);
-
-
 par.handles=handles;
-par.st=st;
 par.g=1;
 par.h=1;
-
-stj=par.st(par.h);
-for evi=1:length(stj.evla)
-    azm(evi)=azimuth0(median(par.stloc(:,1)),median(par.stloc(:,2)),stj.evla(evi),stj.evlo(evi));
-end
-par.azm=azm;
-for evi=1:length(azm)
-    strazm(evi)={['azm' num2str2(azm(evi),5,1)]};
+par.outfile=[par.outdir '/' par.stfs(1).name];
+try
+load(par.outfile)
+catch
+load([par.indir par.stfs(1).name])
 end
 
-set(handles.evlist,'string',strazm);
-set(handles.evlist,'value',1);
-par=IMGstaDisp(par);
-stmp=handles.stmap;
-hold(stmp,'on')
-stlat=par.st(par.h).stla;
-stlon=par.st(par.h).stlo;
-plot(stmp,stlon,stlat,'ro');
-hold(stmp,'off')
+load coast
+par.long=long;
+par.lat=lat;
 
+stj=wgst;
 azmLim=str2double(get(handles.azmLim,'string'));
 nbgrd=str2double(get(handles.nbgrd,'string'));
-hg=findnearDisp(par,nbgrd,azmLim);
+hg=findnearDisp(par,nbgrd,azmLim,stj);
 par.hg=hg;
-PlotStationLocation(handles,par)
-plotazm(par)
+
+strazm=round(azimuth(stj.evla,stj.evlo,stj.st(1),stj.st(2)));
+set(handles.evlist,'string',strazm);
+set(handles.evlist,'value',1);
+% IMGstaDisp(par);
+azmLim=str2double(get(handles.azmLim,'string'));
+nbgrd=str2double(get(handles.nbgrd,'string'));
+hg=findnearDisp(par,nbgrd,azmLim,stj);
+par.hg=hg;
+% PlotStationLocation(handles,par)
+% plotazm(par,stj)
 
 userdata.par=par;
 set(gcf,'userdata',userdata);
@@ -172,36 +156,34 @@ function stlist_Callback(hObject, eventdata, handles)
 %        contents{get(hObject,'Value')} returns selected item from stlist
 userdata=get(gcf,'userdata');
 par = userdata.par;
+par.g=1;
 par.h=get(handles.stlist,'value');
 par.dvm=str2double(get(handles.paradvm,'string'));
 par.dviso=str2double(get(handles.paradviso,'string'));
-par.dvtance=str2double(get(handles.paradvtance,'string'));;
+par.dvtance=str2double(get(handles.paradvtance,'string'));
 par.dvazm=str2double(get(handles.paradvazm,'string'));
-
-stj=par.st(par.h);
-for evi=1:length(stj.evla)
-    azm(evi)=azimuth0(stj.stla,stj.stlo,stj.evla(evi),stj.evlo(evi));
+par.outfile=[par.outdir '/' par.stfs(par.h).name];
+try
+load(par.outfile)
+catch
+load([par.indir '/' par.stfs(par.h).name])
 end
-par.azm=azm;
-for evi=1:length(azm)
-    strazm(evi)={['bazm' num2str2(azm(evi),5,1)]};
-end
-set(handles.evlist,'string',strazm);
-set(handles.evlist,'value',1);
-par=IMGstaDisp(par);
-subplot(handles.stmap);
-hold on
 
+stj=wgst;
 azmLim=str2double(get(handles.azmLim,'string'));
 nbgrd=str2double(get(handles.nbgrd,'string'));
-hg=findnearDisp(par,nbgrd,azmLim);
+hg=findnearDisp(par,nbgrd,azmLim,stj);
 par.hg=hg;
 
+strazm=round(azimuth(stj.evla,stj.evlo,stj.st(1),stj.st(2)));
+set(handles.evlist,'string',strazm);
+set(handles.evlist,'value',1);
+IMGstaDisp(par);
+subplot(handles.stmap);
+hold on
 PlotStationLocation(handles,par)
-plotazm(par)
-stlat=par.st(par.h).stla;
-stlon=par.st(par.h).stlo;
-plot(stlon,stlat,'ro');
+plotazm(par,stj)
+% plot(par.stloc(:,2), par.stloc(:,1),'ro');
 hold off
 userdata.par=par;
 set(gcf,'userdata',userdata);
@@ -231,14 +213,13 @@ function evlist_Callback(hObject, eventdata, handles)
 
 userdata=get(gcf,'userdata');
 par = userdata.par;
-
 par.dvm=str2double(get(handles.paradvm,'string'));
 par.dviso=str2double(get(handles.paradviso,'string'));
-par.dvtance=str2double(get(handles.paradvtance,'string'));;
+par.dvtance=str2double(get(handles.paradvtance,'string'));
 par.dvazm=str2double(get(handles.paradvazm,'string'));
 par.g=get(handles.evlist,'value');
 par=plotdisp(par);
-plotazm(par)
+plotazm(par,par.hg.stj)
 userdata.par=par;
 set(gcf,'userdata',userdata);
 guidata(hObject, handles);
@@ -270,53 +251,33 @@ par.dviso=str2double(get(handles.paradviso,'string'));
 par.dvtance=str2double(get(handles.paradvtance,'string'));
 par.dvazm=str2double(get(handles.paradvazm,'string'));
 par.g=get(handles.evlist,'value');
-st=par.st;
-st(par.h).evla(par.g)=[];
-st(par.h).evlo(par.g)=[];
-st(par.h).dpth(par.g)=[];
-st(par.h).v0(par.g,:)=[];
-st(par.h).dv(par.g,:)=[];
-st(par.h).a0(par.g,:)=[];
-st(par.h).da(par.g,:)=[];
-st(par.h).r0(par.g,:)=[];
-st(par.h).dr(par.g,:)=[];
-st(par.h).g0(par.g,:)=[];
-st(par.h).dg(par.g,:)=[];
-st(par.h).vg(par.g,:)=[];
-st(par.h).azmo(par.g,:)=[];
-st(par.h).periods(par.g,:)=[];
-st(par.h).nsti(par.g,:)=[];
-par.st=st;
-stj=st(par.h);
-if par.g>length(stj.v0(:,1))
-    par.g=length(stj.v0(:,1));
+wgst=par.hg.stj;
+wgst.evla(par.g)=[];
+wgst.evlo(par.g)=[];
+wgst.v(par.g,:)=[];
+wgst.va(par.g,:)=[];
+wgst.vcr(par.g,:)=[];
+wgst.vcra(par.g,:)=[];
+wgst.dvcr(par.g,:)=[];
+wgst.weight(par.g,:)=[];
+wgst.azm(par.g,:)=[];
+wgst.Bx(par.g,:)=[];
+wgst.By(par.g,:)=[];
+save(par.outfile,'wgst')
+par.hg.stj=wgst;
+if par.g>length(wgst.evla)
+    par.g=length(wgst.evla);
 end
 
-for evi=1:length(stj.evla)
-    azm(evi)=azimuth0(st(par.h).stla,st(par.h).stlo,st(par.h).evla(evi),st(par.h).evlo(evi));
-end
+azm=round(azimuth(wgst.evla,wgst.evlo,wgst.st(1),wgst.st(2)));
 par.azm=azm;
+set(handles.evlist,'string',azm);
 
-for evi=1:length(azm)
-    strazm(evi)={['bazm' num2str2(azm(evi),5,1)]};
-end
-set(handles.evlist,'string',strazm);
-
-if par.g>length(par.st(par.h).evlo)
-    par.g=length(par.st(par.h).evlo);
-end
 
 set(handles.evlist,'value',par.g);
 par=plotdisp(par);
-stmap=handles.stmap;
-hold(stmap,'on');
 PlotStationLocation(handles,par)
-stlat=par.st(par.h).stla;
-stlon=par.st(par.h).stlo;
-plot(stmap,stlon,stlat,'ro');
-hold(stmap,'off');
-
-plotazm(par)
+plotazm(par,wgst)
 
 userdata.par=par;
 set(gcf,'userdata',userdata);
@@ -334,58 +295,50 @@ par.dviso=str2double(get(handles.paradviso,'string'));
 par.dvtance=str2double(get(handles.paradvtance,'string'));
 par.dvazm=str2double(get(handles.paradvazm,'string'));
 par.h=get(handles.stlist,'value');
-par.st(par.h)=[];
-st=par.st;
 
-if par.h>length(par.st)
-    par.h=length(par.st);
+if ~exist([par.indir '/bad/'],'dir')
+    mkdir([par.indir '/bad/'])
+end
+
+movefile([par.indir par.stfs(par.h).name],[par.indir '/bad/'])
+par.stfs(par.h)=[];
+par.stname(par.h)=[];
+if par.h>length(par.stfs)
+   par.h=length(par.stfs);
 else
     par.h=par.h;
 end
 
-
-for sti=1:length(st)
-    stname(sti)=st(sti).stn;
-    par.stloc(sti,:)=[st(sti).stla,st(sti).stlo];
-    for i=1:length(par.periods);
-        visom=st(sti).v0(:,i);
-        visom(isnan(visom))=[];
-        par.viso(sti,i)=median(visom);
-    end
-end
-
-par.stname=stname;
-set(handles.stlist,'string',stname);
+set(handles.stlist,'string',par.stname);
 set(handles.stlist,'value',par.h);
+par.handles=handles;
 
-for i=1:length(par.periods);
-    visom=par.viso(:,i);
-    visom(isnan(visom))=[];
-    par.vmall(i)=median(visom);
+par.outfile=[par.outdir '/' par.stfs(par.h).name];
+try
+load(par.outfile)
+catch
+load([par.indir par.stfs(1).name])
 end
 
+load coast
+par.long=long;
+par.lat=lat;
 
-for evi=1:length(st(par.h).evla)
-    azm(evi)=azimuth0(st(par.h).stla,st(par.h).stlo,st(par.h).evla(evi),st(par.h).evlo(evi));
-end
-par.azm=azm;
+stj=wgst;
+azmLim=str2double(get(handles.azmLim,'string'));
+nbgrd=str2double(get(handles.nbgrd,'string'));
+hg=findnearDisp(par,nbgrd,azmLim,stj);
+par.hg=hg;
 
-for evi=1:length(azm)
-    strazm(evi)={['bazm' num2str2(azm(evi),5,1)]};
-end
+strazm=round(azimuth(stj.evla,stj.evlo,stj.st(1),stj.st(2)));
 set(handles.evlist,'string',strazm);
 set(handles.evlist,'value',1);
-
-
-par=IMGstaDisp(par);
+IMGstaDisp(par);
+azmLim=str2double(get(handles.azmLim,'string'));
+nbgrd=str2double(get(handles.nbgrd,'string'));
+hg=findnearDisp(par,nbgrd,azmLim,stj);
+par.hg=hg;
 PlotStationLocation(handles,par)
-stmp=handles.stmap;
-hold(stmp,'on')
-stlat=par.st(par.h).stla;
-stlon=par.st(par.h).stlo;
-plot(stmp,stlon,stlat,'ro');
-hold(stmp,'off')
-
 plotazm(par)
 
 userdata.par=par;
@@ -400,12 +353,6 @@ function SAVE_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 userdata=get(gcf,'userdata');
 par=userdata.par;
-par.dvm=str2double(get(handles.paradvm,'string'));
-par.dviso=str2double(get(handles.paradviso,'string'));
-par.dvtance=str2double(get(handles.paradvtance,'string'));
-par.dvazm=str2double(get(handles.paradvazm,'string'));
-st=par.st;
-save(par.outfile,'st','-v7.3')
 disp('done')
 
 
@@ -420,12 +367,22 @@ par.dvm=str2double(get(handles.paradvm,'string'));
 par.dviso=str2double(get(handles.paradviso,'string'));
 par.dvtance=str2double(get(handles.paradvtance,'string'));
 par.dvazm=str2double(get(handles.paradvazm,'string'));
-sti=par.st;
-v=sti(par.h).v0(par.g,:);
-% v(ismember(par.periods,[par.PdlY par.Pvd par.Pvd2]))=nan;
-v(ismember(par.periods,[par.PdlY]))=nan;
-
-par.st(par.h).v0(par.g,:)=v;
+wgst=par.hg.stj;
+par.PdlY=[find(par.deleteID) par.PdlY];
+par.PdlY=unique(par.PdlY);
+wgst.v(par.g,par.PdlY)=nan;
+wgst.va(par.g,par.PdlY)=nan;
+wgst.vcr(par.g,par.PdlY)=nan;
+wgst.vcra(par.g,par.PdlY)=nan;
+wgst.dvcr(par.g,par.PdlY)=nan;
+wgst.weight(par.g,par.PdlY)=nan;
+wgst.azm(par.g,par.PdlY)=nan;
+wgst.Bx(par.g,par.PdlY)=nan;
+wgst.By(par.g,par.PdlY)=nan;
+par.hg.stj=wgst;
+save(par.outfile,'wgst')
+par.PdlX=[];
+par.PdlY=[];
 par=plotdisp(par);
 % Update handles structure
 userdata.par=par;
@@ -443,12 +400,22 @@ par.dvm=str2double(get(handles.paradvm,'string'));
 par.dviso=str2double(get(handles.paradviso,'string'));
 par.dvtance=str2double(get(handles.paradvtance,'string'));
 par.dvazm=str2double(get(handles.paradvazm,'string'));
-sti=par.st;
-v=sti(par.h).v0(par.g,:);
-% v(ismember(par.periods,[par.PdlX par.Pvd par.Pvd2]))=nan;
-v(ismember(par.periods,[par.PdlX]))=nan;
-
-par.st(par.h).v0(par.g,:)=v;
+par.PdlX=[find(par.deleteID) par.PdlX];
+par.PdlX=unique(par.PdlX);
+wgst=par.hg.stj;
+wgst.v(par.g,par.PdlX)=nan;
+wgst.va(par.g,par.PdlX)=nan;
+wgst.vcr(par.g,par.PdlX)=nan;
+wgst.vcra(par.g,par.PdlX)=nan;
+wgst.dvcr(par.g,par.PdlX)=nan;
+wgst.weight(par.g,par.PdlX)=nan;
+wgst.azm(par.g,par.PdlY)=nan;
+wgst.Bx(par.g,par.PdlY)=nan;
+wgst.By(par.g,par.PdlY)=nan;
+par.hg.stj=wgst;
+save(par.outfile,'wgst')
+par.PdlX=[];
+par.PdlY=[];
 par=plotdisp(par);
 % Update handles structure
 userdata.par=par;
@@ -467,12 +434,15 @@ par.dviso=str2double(get(handles.paradviso,'string'));
 par.dvtance=str2double(get(handles.paradvtance,'string'));
 par.dvazm=str2double(get(handles.paradvazm,'string'));
 par.g=get(handles.evlist,'value');
+
 if par.g>1
     par.g=par.g-1;
 end
 set(handles.evlist,'value',par.g);
+
 par=plotdisp(par);
-plotazm(par);
+plotazm(par,par.hg.stj)
+
 userdata.par=par;
 set(gcf,'userdata',userdata);
 guidata(hObject, handles);
@@ -490,13 +460,14 @@ par.dviso=str2double(get(handles.paradviso,'string'));
 par.dvtance=str2double(get(handles.paradvtance,'string'));
 par.dvazm=str2double(get(handles.paradvazm,'string'));
 par.g=get(handles.evlist,'value');
-stj=par.st(par.h);
+stj=par.hg.stj;
 if par.g<length(stj.evlo)
     par.g=par.g+1;
 end
-set(handles.evlist,'value',par.g);
+
 par=plotdisp(par);
-plotazm(par);
+plotazm(par,par.hg.stj)
+set(handles.evlist,'value',par.g);
 userdata.par=par;
 set(gcf,'userdata',userdata);
 guidata(hObject, handles);
@@ -514,22 +485,28 @@ par.dviso=str2double(get(handles.paradviso,'string'));
 par.dvtance=str2double(get(handles.paradvtance,'string'));
 par.dvazm=str2double(get(handles.paradvazm,'string'));
 par=plotdisp(par);
-ds=par.ds;
 hold(handles.figdsp1,'on')
 par.dlX=[];
 par.dlY=[];
-v=ds.v;
-periods=ds.period;
+v=par.hg.stj.v(par.g,:);
+periods=par.hg.stj.periods;
+[y,x] = getpts(handles.figdsp1);
+% [ys,xs] = getpts(handles.figdsp1);
+% xidx=1:length(xs);
+% id1=mod(xidx,2)==1;
+% id2=mod(xidx,2)==0;
 
-[y,x] = ginput(2);
-deleteXi=find(v>min(x)&v<max(x));
-deleteYi=find(periods>min(y)&periods<max(y));
+% % [y,x] = ginput(2);
+% for i=1:length(find(mod(xidx,2)==1))
+deleteXi=find(v>min(x)&v<max(x)&periods>min(y)&periods<max(y));
+deleteYi=find(v>min(x)&v<max(x)&periods>min(y)&periods<max(y));
+% end
 scatter(periods(deleteXi),v(deleteXi),25,'fill','g')
 hold(handles.figdsp1,'on')
 scatter(periods(deleteYi),v(deleteYi),20,'fill','r')
 hold(handles.figdsp1,'off')
-par.PdlX=periods(deleteXi);
-par.PdlY=periods(deleteYi);
+par.PdlX=deleteXi;
+par.PdlY=deleteYi;
 userdata.par=par;
 set(gcf,'userdata',userdata);
 guidata(hObject, handles);
@@ -542,206 +519,175 @@ function Auto_Callback(hObject, eventdata, handles)
 
 userdata=get(gcf,'userdata');
 par = userdata.par;
+par.handles=[];
 par.dvm=str2double(get(handles.paradvm,'string'));
 par.dviso=str2double(get(handles.paradviso,'string'));
 par.dvtance=str2double(get(handles.paradvtance,'string'));
 par.dvazm=str2double(get(handles.paradvazm,'string'));
+azmLim=str2double(get(handles.azmLim,'string'));
+nbgrd=str2double(get(handles.nbgrd,'string'));
 loop=get(handles.Loops,'string');
 loop=str2double(loop);
+paramat='paraDispPick.mat';
+save(paramat,'par','azmLim','nbgrd','loop')
+
+disp('Auto Pickign...')
 for loops=1:loop
-    st=par.st;
-    kh=0;
-    iidg=[];
-    for h=1:length(st)
-        par.h=h;
-        disp([num2str(h/length(st)*100),'%'])
-        sti=st(h);
-        for g=1:length(sti.evla) 
-            par.g=g;
-            vr=sti.v0(g,:);
-            periods=par.periods;
-            v=vr;
-            prd=sti.periods(g,:);        
-            idnan=~isnan(v);
-            
-            prd(isnan(v))=[];
-            v(isnan(v))=[];
-            
-            idv1=abs(v-par.vmall(idnan));
-            bad1= idv1>par.dvm;
-            badpd1=prd(bad1);
-            badid1=find(ismember(periods,badpd1));
-            
-            
-            
-            idv2=abs(v-par.viso(h,idnan));
-            bad2= idv2>par.dviso;
-            badpd2=prd(bad2);
-            badid2=find(ismember(periods,badpd2));
-                        
+    parfor h=1:length(par.stfs)
+        autoPick(paramat,h)
+    end  
+end
+disp('Picking done')
+delete(paramat)
 
 
 
-            if loops<3
-                if length(v)>=25
-                    pv = polyfit(prd,v,3);
-                    vv=polyval(pv,prd);
-                    iidg(h,g)=nan;
-                elseif length(v)<25&&length(v)>10
-                    pv = polyfit(prd,v,3);
-                    vv=polyval(pv,prd);
-                    iidg(h,g)=nan;
-                else
-                    iidg(h,g)=g;
-                    continue
-                end
-            else
-                pv = polyfit(prd,v,3);
-                vv=polyval(pv,prd);
-                iidg(h,g)=nan;
-            end
-                
-            
-            idv3=abs(v-vv);
-            bad3= idv3>par.dvtance;
-            badpd3=prd(bad3);
-            badid3=find(ismember(periods,badpd3));
-            
-            %%
-            azmLim=str2double(get(handles.azmLim,'string'));
-            nbgrd=str2double(get(handles.nbgrd,'string'));
-            hg=findnearDisp(par,nbgrd,azmLim);
-            par.hg=hg;
-            hi=hg.hi;
-            gii=hg.gii;
-            for i=1:length(hi)
-                idh=hi(i);
-                idg=cell2mat(gii(i));
-                stgi=st(idh);
-                vi(1:length(idg),:)=stgi.v0(idg,:);
-%                 figure(999);
-                for ip=1:length(vi(1,:))
-                    vmip=vi(:,ip);
-                    vmip(isnan(vmip))=[];
-                    if ~isempty(vmip)
-                        vmi(i,ip)=median(vmip);
-                    else
-                        vmi(i,ip)=nan;
-                    end
-                end
-%                 plot(par.periods,vmi(i,:),'color',[0.4 0.4 0.4])
-%                 hold on  
-            end
-          
-            for ip=1:length(par.periods)
-                vmip=vmi(:,ip);
-                vmip(isnan(vmip))=[];
-                vm(ip)=median(vmip);
-            end
-            prdvm=par.periods;
-            prdvm(isnan(vm))=[];
-            vm(isnan(vm))=[];
-            
-%             plot(prdvm,vm,'y','LineWidth',2)
-%             idv4=abs(v-vm(ismember(prdvm,prd)));
-%             bad4= idv4>par.dvazm;
-%             badpd4=prd(bad4);
-%             badid4=find(ismember(periods,badpd4));
-            
-            pvm = polyfit(prdvm,vm,3);
-            vvm=polyval(pvm,prd);
-%             plot(prd,vvm,'y','LineWidth',2)
-            idv4=abs(v-vvm);
-            bad4= idv4>par.dvazm;
-            badpd4=prd(bad4);
-            badid4=find(ismember(periods,badpd4));
-            
-            %%
-%             plot(par.periods,par.viso(par.h,:),'g','LineWidth',2)
-%             plot(par.periods,par.vmall,'r','LineWidth',2)
-%             plot(par.periods,par.viso(par.h,:)-par.dvm,'k')
-%             plot(par.periods,par.viso(par.h,:)+par.dvm,'k')
-%             scatter(prd,v,80,'MarkerEdgeColor','k',...
-%                 'MarkerFaceColor',[0 .7 .8])
-            
-            
-%             scatter(badpd1,v(idv1>par.dvm),80,'MarkerEdgeColor','w',...
-%                 'MarkerFaceColor','R')
-%             scatter(badpd2,v(idv2>par.dviso),60,'MarkerEdgeColor','w',...
-%                 'MarkerFaceColor','G')
-%             scatter(badpd3,v(idv3>par.dvtance),40,'MarkerEdgeColor','w',...
-%                 'MarkerFaceColor','k')
-%             scatter(badpd4,v(idv4>par.dvazm),20,'MarkerEdgeColor','w',...
-%                 'MarkerFaceColor','Y')
-%             
-%             xlim([min(par.periods)-5,max(par.periods)+5])
-%             ylim([3,4.5])
-%             drawnow;
-%             hold off
-
-            
-            
-            
-            badid=[badid1 badid2 badid3 badid4];  
-            badid=unique(badid);
-            st(h).v0(g,badid)=nan;
-            st(h).dv(g,badid)=nan;
-            st(h).a0(g,badid)=nan;
-            st(h).da(g,badid)=nan;
-            st(h).r0(g,badid)=nan;
-            st(h).dr(g,badid)=nan;
-            st(h).g0(g,badid)=nan;
-            st(h).dg(g,badid)=nan;
-            st(h).vg(g,badid)=nan;
-            st(h).azmo(g,badid)=nan;
-            st(h).periods(g,badid)=nan;
-            st(h).nsti(g,badid)=nan;
-            
-
-        end
-    end
-    
-    
-    for h=1:length(iidg(:,1))
-        idg=iidg(h,:);
-        idg(isnan(idg))=[];
-        idg(idg==0)=[];
-        st(h).evla(idg)=[];
-        st(h).evlo(idg)=[];
-        st(h).dpth(idg)=[];
-        st(h).v0(idg,:)=[];
-        st(h).dv(idg,:)=[];
-        st(h).a0(idg,:)=[];
-        st(h).da(idg,:)=[];
-        st(h).r0(idg,:)=[];
-        st(h).dr(idg,:)=[];
-        st(h).g0(idg,:)=[];
-        st(h).dg(idg,:)=[];
-        st(h).vg(idg,:)=[];
-        st(h).azmo(idg,:)=[];
-        st(h).periods(idg,:)=[];
-        st(h).nsti(idg,:)=[];
-        if isempty(st(h).evla)
-            kh=kh+1;
-            idh(kh)=h;
-        end
-    end
-    
-    if kh>0
-        st(idh)=[];
-    end
+function autoPick(paramat,h)
+load(paramat)
+par.h=h;
+if mod(h/length(par.stfs)*100,10)==0
+    disp([num2str(h/length(par.stfs)*100),'%'])
 end
 
 
+infile=[par.indir '/' par.stfs(h).name];
+outfile=[par.outdir '/' par.stfs(h).name];
+if exist(outfile,'file')&&par.isoverwrite==0;
+    disp(['overwrite=0, skip:  ' par.stfs(h).name])
+    return
+end
 
+try
+    load(outfile)
+catch
+    load(infile)
+end
+stj=wgst;
+igk=0;
+for g=1:length(stj.evla)
+    par.g=g;
+    vr=stj.v(g,:);
+    periods=stj.periods;
+    v=vr;
+    prd=stj.periods;
+    
+    if isempty(v(~isnan(v)))
+        igk=igk+1;
+        badEVi(igk)=g;
+        continue
+    end
+    
+    idv1=abs(v-par.visom);
+    bad1= idv1>par.dvm|isnan(v);
+    %%
+    hg=findnearDisp(par,nbgrd,azmLim,stj);
+    par.hg=hg;
+    hi=hg.hi;
+    gii=hg.gii;
+    for i=1:length(hi)
+        idg=cell2mat(gii(i));
+        sti=hg.sti(i);
+        vi(1:length(idg),:)=sti.v(idg,:);
+        vis=sti.v;
+        for ip=1:length(vi(1,:))
+            vmip=vi(:,ip);
+            vmips=vis(:,ip);
+            vmip(isnan(vmip))=[];
+            vmips(isnan(vmips))=[];
+            if ~isempty(vmip)
+                vmi(i,ip)=median(vmip);
+            else
+                vmi(i,ip)=nan;
+            end
+            
+            if ~isempty(vmips)
+                vmis(i,ip)=median(vmips);
+            else
+                vmis(i,ip)=nan;
+            end
+            
+        end
+    end
+    vmis=[vmis;par.viso(h,:)];
+    
+    for ip=1:length(stj.periods)
+        vmip=vmi(:,ip);
+        vmip(isnan(vmip))=[];
+        vm(ip)=median(vmip);
+        vmips=vmis(:,ip);
+        vmips(isnan(vmips))=[];
+        vmiso(ip)=median(vmips);
+    end
+    
+    prdvm=stj.periods;
+    prdvm(isnan(vm))=[];
+    vm(isnan(vm))=[];
+    
+    if length(vm)>=10
+        pvm = polyfit(prdvm,vm,3);
+        vvm=polyval(pvm,prd);
+    else
+        vvm=vm;
+    end
+    
+    
+    idv4=abs(v-vvm);
+    bad4= idv4>par.dvazm|isnan(v);
+    
+    
+    idv2=abs(v-vmiso);
+    bad2= idv2>par.dviso|isnan(v);
+    
+    
+    gid=~bad1&~bad2&~bad4;
+    
+    if length(v(gid))>=10
+        pv = polyfit(prd(gid),v(gid),3);
+        vv=polyval(pv,prd);
+    elseif isempty(v(gid))
+        continue
+    else
+        vv=v;
+    end
+    
+    
+    idv3=abs(v-vv);
+    bad3= idv3>par.dvtance|isnan(v);
+    
+    badid = bad1 | bad2 | bad3 | bad4;
+    
+    stj.v(g,badid)=nan;
+    stj.va(g,badid)=nan;
+    stj.vcr(g,badid)=nan;
+    stj.vcra(g,badid)=nan;
+    stj.dvcr(g,badid)=nan;
+    stj.weight(g,badid)=nan;
+    stj.azm(g,badid)=nan;
+    stj.Bx(g,badid)=nan;
+    stj.By(g,badid)=nan;
+    
+    if isempty(stj.v(~isnan(stj.v)))
+        igk=igk+1;
+        badEVi(igk)=g;
+    end
+    
+end
 
-par.st=st;
-userdata.par=par;
-set(gcf,'userdata',userdata);
-guidata(hObject, handles);
-save(par.outfile,'st','-v7.3')
-disp('done')
-
+if igk>0
+    stj.evla(badEVi)=[];
+    stj.evlo(badEVi)=[];
+    stj.v(badEVi,:)=[];
+    stj.va(badEVi,:)=[];
+    stj.vcr(badEVi,:)=[];
+    stj.vcra(badEVi,:)=[];
+    stj.dvcr(badEVi,:)=[];
+    stj.weight(badEVi,:)=[];
+    stj.azm(badEVi,:)=[];
+    stj.Bx(badEVi,:)=[];
+    stj.By(badEVi,:)=[];
+end
+wgst=stj;
+save(outfile,'wgst')
 
 
 
@@ -760,34 +706,39 @@ par.dviso=str2double(get(handles.paradviso,'string'));
 par.dvtance=str2double(get(handles.paradvtance,'string'));
 par.dvazm=str2double(get(handles.paradvazm,'string'));
 par.h=get(handles.stlist,'value');
-if par.h<length(par.st)
+par.g=1;
+if par.h<length(par.stfs)
     par.h=par.h+1;
 end
-set(handles.stlist,'value',par.h);
-
-stj=par.st(par.h);
-for evi=1:length(stj.evla)
-    azm(evi)=azimuth0(median(par.stloc(:,1)),median(par.stloc(:,2)),stj.evla(evi),stj.evlo(evi));
+par.outfile=[par.outdir '/' par.stfs(par.h).name];
+try
+load(par.outfile)
+catch
+load([par.indir par.stfs(par.h).name])
 end
-%    azm=sort(azm);
-par.azm=azm;
 
-for evi=1:length(azm)
-    strazm(evi)={['azm' num2str2(azm(evi),5,1)]};
-end
+stj=wgst;
+azmLim=str2double(get(handles.azmLim,'string'));
+nbgrd=str2double(get(handles.nbgrd,'string'));
+hg=findnearDisp(par,nbgrd,azmLim,stj);
+par.hg=hg;
+
+strazm=round(azimuth(stj.evla,stj.evlo,stj.st(1),stj.st(2)));
 set(handles.evlist,'string',strazm);
 set(handles.evlist,'value',1);
-par=IMGstaDisp(par);
+set(handles.stlist,'value',par.h);
+
+IMGstaDisp(par);
 subplot(handles.stmap);
 hold on
 PlotStationLocation(handles,par)
-stlat=par.st(par.h).stla;
-stlon=par.st(par.h).stlo;
-plot(stlon,stlat,'ro');
+plotazm(par,stj)
+% plot(par.stloc(:,2), par.stloc(:,1),'ro');
 hold off
 userdata.par=par;
 set(gcf,'userdata',userdata);
 guidata(hObject, handles);
+
 
 % --- Executes on button press in stLast.
 function stLast_Callback(hObject, eventdata, handles)
@@ -801,29 +752,34 @@ par.dviso=str2double(get(handles.paradviso,'string'));
 par.dvtance=str2double(get(handles.paradvtance,'string'));
 par.dvazm=str2double(get(handles.paradvazm,'string'));
 par.h=get(handles.stlist,'value');
+par.g=1;
 if par.h>1
     par.h=par.h-1;
 end
-set(handles.stlist,'value',par.h);
-
-stj=par.st(par.h);
-for evi=1:length(stj.evla)
-    azm(evi)=azimuth0(median(par.stloc(:,1)),median(par.stloc(:,2)),stj.evla(evi),stj.evlo(evi));
+par.outfile=[par.outdir '/' par.stfs(par.h).name];
+try
+load(par.outfile)
+catch
+load([par.indir par.stfs(par.h).name])
 end
-azm=sort(azm);
 
-for evi=1:length(azm)
-    strazm(evi)={['azm' num2str2(azm(evi),5,1)]};
-end
+stj=wgst;
+azmLim=str2double(get(handles.azmLim,'string'));
+nbgrd=str2double(get(handles.nbgrd,'string'));
+hg=findnearDisp(par,nbgrd,azmLim,stj);
+par.hg=hg;
+
+strazm=round(azimuth(stj.evla,stj.evlo,stj.st(1),stj.st(2)));
 set(handles.evlist,'string',strazm);
 set(handles.evlist,'value',1);
-par=IMGstaDisp(par);
+set(handles.stlist,'value',par.h);
+
+IMGstaDisp(par);
 subplot(handles.stmap);
 hold on
 PlotStationLocation(handles,par)
-stlat=par.st(par.h).stla;
-stlon=par.st(par.h).stlo;
-plot(stlon,stlat,'ro');
+plotazm(par,stj)
+% plot(par.stloc(:,2), par.stloc(:,1),'ro');
 hold off
 userdata.par=par;
 set(gcf,'userdata',userdata);
@@ -832,110 +788,70 @@ guidata(hObject, handles);
 function PlotStationLocation(handles,par)
 h1 = handles.stmap;
 hold(h1, 'off');
-g_allsta.lat=par.stloc(:,1);
-g_allsta.lon=par.stloc(:,2);
-plot(h1, g_allsta.lon, g_allsta.lat, 'k.');
+g_allsta.lat=par.stloc(:,2);
+g_allsta.lon=par.stloc(:,1);
+plot(h1, g_allsta.lon, g_allsta.lat, '.','color',[0.6 0.6 0.6]);
 hold(h1, 'on');
 hg=par.hg;
 hi=hg.hi;
 plot(h1, g_allsta.lon(hi), g_allsta.lat(hi), 'r.');
-plot(h1, g_allsta.lon(hg.h), g_allsta.lat(hg.h), 'b.')
-set(h1,'Visible','off')
+scatter(h1, g_allsta.lon(hg.h), g_allsta.lat(hg.h), 'ob')
+axis equal
+% set(h1,'Visible','off')
 
 
 
-function par=IMGstaDisp(par)
+function IMGstaDisp(par)
 handles=par.handles;
-sti=par.st(par.h);
+stj=par.hg.stj;
 f1=handles.figdsp1;
 hold(f1, 'off');
 
-for i=1:length(sti.evla)
-    periods=par.periods;
-    v=sti.v0(i,:);
+for i=1:length(stj.evla)
+    periods=stj.periods;
+    v=stj.v(i,:);
     periods(isnan(v))=[];
     v(isnan(v))=[];
     
     if ~isempty(v)
-        
-        if length(v)>25
-            pv = polyfit(periods,v,3);
-        elseif length(v)<=20&&length(v)>=10
-            pv = polyfit(periods,v,3);
-        else
-            pv = polyfit(periods,v,2);
-        end
-        
-%         vv=polyval(pv,periods);
         vv=v;
-        azm=par.azm(i);
+        azm=stj.azm(i,1);        
         
-        if azm<0
-            azm=360+azm;
-        end
+        plot(f1,periods,vv,'b.')
         
-        if azm>180
-            azm=azm-180;
-        end
-        
-        
-        if azm>=0&&azm<180/7
-            plot(f1,periods,vv,'color',[255,0,0]/255)
-        elseif azm>=180/7&&azm<2*180/7
-            plot(f1,periods,vv,'color',[255,165,0]/255)
-        elseif azm>=2*180/7&&azm<3*180/7
-            plot(f1,periods,vv,'color',[255,255,0]/255)
-        elseif azm>=3*180/7&&azm<4*180/7
-            plot(f1,periods,vv,'color',[0,255,0]/255)
-        elseif azm>=4*180/7&&azm<5*180/7
-            plot(f1,periods,vv,'color',[0,255,255]/255)
-        elseif azm>=5*180/7&&azm<6*180/7
-            plot(f1,periods,vv,'color',[0,0,255]/255)
-        else
-            plot(f1,periods,vv,'color',[139,0,255]/255)
-        end
-        xlim(f1,[min(par.periods)-5,max(par.periods)+5])
-        ylim(f1,[3,4.5])
+        xlim(f1,[min(stj.periods)-5,max(stj.periods)+5])
         hold(f1, 'on');
     else
-        plot(f1,[min(par.periods)-5,max(par.periods)+5],[4.5,4.5],'k')
+        plot(f1,[min(stj.periods)-5,max(stj.periods)+5],[4.5,4.5],'k')
     end
 end
+ylim(f1,[2,5])
+hold(f1, 'off');
 
 
-% id=flip(1:length(sti.evla));
-% for ori=1:length(id)
-%     set(handles.figdsp1.Children(ori),'tag',num2str((id(ori))))
-% end
-% hh=get(gca,'children');
-% set(hh,'ButtonDownFcn','indxh=get(gcbo,''tag'');disp(str2double(indxh));yy=get(gcf,''userdata'');par=yy.par;handles=par.handles; set(handles.evlist,''value'',str2double(indxh)); par.handles=handles;userdata.par=par;set(gcf,''userdata'',userdata)')
-% hold(f1, 'off');
+
 
 
 function par=plotdisp(par)
 handles=par.handles;
-st=par.st;
-periods=par.periods;
-v=st(par.h).v0(par.g,:);
-id=~isnan(v);
-periods(isnan(v))=[];
-v(isnan(v))=[];
-dv2=abs(v-par.viso(par.h,id));
-dv3=abs(v-par.vmall(id));
+st=par.hg.stj;
+periods=st.periods;
+v=st.v(par.g,:);
+dv3=abs(v-par.visom);
 
 %%
 azmLim=str2double(get(handles.azmLim,'string'));
 nbgrd=str2double(get(handles.nbgrd,'string'));
-hg=findnearDisp(par,nbgrd,azmLim);
+hg=findnearDisp(par,nbgrd,azmLim,st);
 par.hg=hg;
 hi=hg.hi;
 gii=hg.gii;
+f2=handles.figdsp1;
 for i=1:length(hi)    
-    idh=hi(i);
     idg=cell2mat(gii(i));
-    sti=st(idh);
-    vi(1:length(idg),:)=sti.v0(idg,:);
-    f2=handles.figdsp1;
+    sti=hg.sti(i);
+    vi(1:length(idg),:)=sti.v(idg,:);
+    vis=sti.v;
     for ip=1:length(vi(1,:))
         vmip=vi(:,ip);
         vmip(isnan(vmip))=[];
@@ -944,43 +860,57 @@ for i=1:length(hi)
         else
             vmi(i,ip)=nan;
         end
+        
+        vmips=vis(:,ip);
+        vmips(isnan(vmips))=[];
+        if ~isempty(vmips)
+            vmis(i,ip)=median(vmips);
+        else
+            vmis(i,ip)=nan;
+        end
+        
     end    
-    plot(f2,par.periods,vmi(i,:),'g')
+    plot(f2,st.periods,vmi(i,:),'g')
     hold(f2,'on')
 
 end
 %%
-for ip=1:length(par.periods)
+vmis=[vmis;par.viso(par.h,:)];
+for ip=1:length(st.periods)
     vmipi=vmi(:,ip);    
     vmipi(isnan(vmipi))=[];
     vm(ip)=median(vmipi);
+    vmipis=vmis(:,ip);    
+    vmipis(isnan(vmipis))=[];
+    vms(ip)=median(vmipis);
 end
-prdvm=par.periods;
+prdvm=st.periods;
 prdvm(isnan(vm))=[];
 vm(isnan(vm))=[];
+vms(isnan(vms))=[];
+
+dv2=abs(v-vms);
 
 pvm = polyfit(prdvm,vm,3);
 vvm=polyval(pvm,periods);
-plot(f2,periods,vvm,'b','LineWidth',3)
-dv4=abs(v-vvm);   
+plot(f2,periods,vm,'.k','LineWidth',16)
+dv4=abs(v-vm);   
 
 f2=handles.figdsp1;
-plot(f2,par.periods,par.viso(par.h,:),'r','LineWidth',3)
-plot(f2,par.periods,par.vmall,'y','LineWidth',3)
-plot(f2,par.periods,par.viso(par.h,:)-par.dvm,'b')
-plot(f2,par.periods,par.viso(par.h,:)+par.dvm,'b')
+plot(f2,st.periods,par.viso(par.h,:),'r','LineWidth',3)
+plot(f2,st.periods,par.visom,'y','LineWidth',3)
+plot(f2,st.periods,par.viso(par.h,:)-par.dvm,'b')
+plot(f2,st.periods,par.viso(par.h,:)+par.dvm,'b')
 scatter(f2,periods,v,40,'MarkerEdgeColor','k',...
     'MarkerFaceColor',[0 .7 .8])
-
-if length(v)>25
-    pv = polyfit(periods,v,3);
-elseif length(v)<=25&&length(v)>=15
-    pv = polyfit(periods,v,3);
+idv=dv2<=par.dviso&dv3<=par.dvm&dv4<=par.dvazm;
+if length(v)>5
+    pv = polyfit(periods(idv),v(idv),3);
+    vv=polyval(pv,periods,3);
 else
-    pv = polyfit(periods,v,3);
+    vv = v;
 end
-vv=polyval(pv,periods);
-plot(f2,periods,vv,'k','LineWidth',1);
+plot(f2,periods(~isnan(v)),vv(~isnan(v)),'k','LineWidth',1);
 dv1=abs(v-vv);
 
 
@@ -993,138 +923,93 @@ scatter(f2,periods(dv3>par.dvm),v(dv3>par.dvm),20,'MarkerEdgeColor','w',...
 scatter(f2,periods(dv4>par.dvazm),v(dv4>par.dvazm),20,'MarkerEdgeColor','w',...
     'MarkerFaceColor','R')
 
-xlim(f2,[min(par.periods)-5,max(par.periods)+5])
-ylim(f2,[3,4.5])
-hold(f2,'off')
+par.deleteID=dv1>par.dvtance|dv2>par.dviso|dv3>par.dvm|dv4>par.dvazm;
 
-ds.v=v;
-ds.period=periods;
+xlim(f2,[min(st.periods)-5,max(st.periods)+5])
+ylim(f2,[2,5])
+hold(f2,'off')
 par.Pvd=periods(dv1>par.dvtance);
 par.Pvd2=periods(dv2>par.dvm);
-par.ds=ds;
 
 
-function hg=findnearDisp(par,KmLim1,azmLim)
+function hg=findnearDisp(par,KmLim1,azmLim,stj)
 h=par.h;
 g=par.g;
-st=par.st;
-stj=st(par.h);
-for evi=1:length(stj.evla)
-    azm(evi)=azimuth0(median(par.stloc(:,1)),median(par.stloc(:,2)),stj.evla(evi),stj.evlo(evi));
-end
-par.azm=azm;
-
+hg.stj=stj;
+azm=azimuth(stj.evla,stj.evlo,stj.st(1),stj.st(2));
 azm0=azm(g);
-if azm0<azmLim/2
-    azmax=azm0+azmLim/2;
-    azmin=360-azmLim/2+azm0;
-    gi1=find(azm<=azmax&azm>=0);
-    gi2=find(azm<=360&azm>=azmin);
-    gi=[gi1,gi2];
-elseif azm0>360-azmLim/2
-    azmax=azmLim/2-360+azm0;
-    azmin=azm0-azmLim/2;
-    gi1=find(azm<=360&azm>=azmin);
-    gi2=find(azm<=azmax>=0);
-    gi=[gi1,gi2];
-else
-    azmax=azm0+azmLim/2;
-    azmin=azm0-azmLim/2;
-    gi=find(azm>=azmin&azm<=azmax);
+par.azm=azm;
+dazm=azm-azm0;
+while ~isempty(find(abs(dazm)>90, 1))
+dazm(dazm>90)=dazm(dazm>90)-180;   
+dazm(dazm<-90)=dazm(dazm<-90)+180;   
 end
-hg.gi=gi;
+hg.gi=find(dazm>-azmLim&dazm<azmLim);
 hg.h=h;
 
-la1=par.stloc(h,1);
-lo1=par.stloc(h,2);
-lamax=la1+KmLim1/deg2km(1);
-lamin=la1-KmLim1/deg2km(1);
-lomax=lo1+KmLim1/deg2km(1);
-lomin=lo1-KmLim1/deg2km(1);
-La=find(par.stloc(:,1)<=lamax&par.stloc(:,1)>=lamin);
-Lo=find(par.stloc(:,2)<=lomax&par.stloc(:,2)>=lomin);
-hi=intersect(La,Lo);
-for i=1:length(hi)
-    index=hi(i);
-    sti=st(index);
-    clear azmi
-    for j=1:length(sti.evla)
-        azmi(j)=azimuth0(sti.stla,sti.stlo,sti.evla(j),sti.evlo(j));
+
+dist=distance(stj.st(1),stj.st(2),par.stloc(:,2),par.stloc(:,1));
+hg.hi=find(dist>-KmLim1/deg2km(1)&dist<KmLim1/deg2km(1));
+
+for i=1:length(hg.hi)
+    index=hg.hi(i);
+    stf=par.stfs(index).name;
+    
+    try
+        load([par.indir '/Pick_' stf])
+    catch
+        load([par.indir '/' stf])
     end
-    if azm0<azmLim/2
-        azmax=azm0+azmLim/2;
-        azmin=360-azmLim/2+azm0;
-        gii1=find(azmi<=azmax&azmi>=0);
-        gii2=find(azmi<=360&azmi>=azmin);
-        gii(i)={[gii1,gii2]};
-    elseif azm0>360-azmLim/2
-        azmax=azmLim/2-360+azm0;
-        azmin=azm0-azmLim/2;
-        gii1=find(azmi<=360&azmi>=azmin);
-        gii2=find(azmi<=azmax>=0);
-        gii(i)={[gii1,gii2]};
-    else
-        azmax=azm0+azmLim/2;
-        azmin=azm0-azmLim/2;
-        gii(i)={find(azmi>=azmin&azmi<=azmax)};
+    
+    sti=wgst;
+    hg.sti(i)=wgst;
+    azm=azimuth(sti.evla,sti.evlo,sti.st(1),sti.st(2));
+    par.azm=azm;
+    dazm=azm-azm0;
+    while ~isempty(find(abs(dazm)>90, 1))
+        dazm(dazm>90)=dazm(dazm>90)-180;
+        dazm(dazm<-90)=dazm(dazm<-90)+180;
     end
+    hg.gii(i,1)={find(dazm>-azmLim&dazm<azmLim)};
 end
 
-k=0;
-for i=1:length(gii)
-    flggi=cell2mat(gii(i));
-    if isempty(flggi)
-        k=k+1;
-        idbad(k)=i;
-    end  
-end
-
-if k>0
-    hi(idbad)=[];
-    gii(idbad)=[];
-end
-hg.hi=hi;
-hg.gii=gii;
 
 
-
-function plotazm(par)
+function plotazm(par,stj)
 handles=par.handles;
-stj=par.st(par.h);
 par.g=get(handles.evlist,'value');
 par.h=get(handles.stlist,'value');
 azmLim=str2double(get(handles.azmLim,'string'));
 nbgrd=str2double(get(handles.nbgrd,'string'));
-hg=findnearDisp(par,nbgrd,azmLim);
+hg=findnearDisp(par,nbgrd,azmLim,stj);
 par.hg=hg;
 evlo=stj.evlo(par.g);
 evla=stj.evla(par.g);
-stla=stj.stla;
-stlo=stj.stlo;
+stla=stj.st(1);
+stlo=stj.st(2);
 af=handles.azmap;
 %%world map
-load coast
-plot(af,long,lat,'Color',[150 150 150]/255)
+
+plot(af,par.long,par.lat,'Color',[150 150 150]/255)
 hold(af,'on')
 plot(af,stj.evlo,stj.evla,'.r')
-scatter(af,evlo,evla,'b')
 scatter(af,stlo,stla,40,'^','MarkerEdgeColor','k','MarkerFaceColor','y','LineWidth',1)
 xlim(af,[-180 180])
 ylim(af,[-90 90])
-
-stgii=par.st(hg.hi);
+hi=hg.hi;
 gii=hg.gii;
 
-for i=1:length(hg.hi)  
-    plot(af,stgii(i).evlo(cell2mat(gii(i))),stgii(i).evla(cell2mat(gii(i))),'.g')    
+for i=1:length(hi)
+    stgii=hg.sti(i);    
+    plot(af,stgii.evlo(cell2mat(gii(i))),stgii.evla(cell2mat(gii(i))),'.g')    
 end
 
-stgi=par.st(hg.h);
+stgi=hg.stj; 
 gi=hg.gi;
 plot(af,stgi.evlo(gi),stgi.evla(gi),'.g')
-
+scatter(af,evlo,evla,'b*')
 hold(af,'off')
-set(af,'Visible','off')
+% set(af,'Visible','off')
 
 
 
@@ -1286,3 +1171,73 @@ function paradvazm_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
+
+
+% --- Executes on key press with focus on figure1 and none of its controls.
+function figure1_KeyPressFcn(hObject, eventdata, handles)
+% hObject    handle to figure1 (see GCBO)
+% eventdata  structure with the following fields (see MATLAB.UI.FIGURE)
+%	Key: name of the key that was pressed, in lower case
+%	Character: character interpretation of the key(s) that was pressed
+%	Modifier: name(s) of the modifier key(s) (i.e., control, shift) pressed
+% handles    structure with handles and user data (see GUIDATA)
+if isempty(eventdata.Modifier)%判断是否有快捷键
+    ctrl='';%无则赋值为空
+else
+    ctrl=eventdata.Modifier{1};%有，则取出辅助键
+end
+key=eventdata.Key;
+switch key
+    case 'alt'
+        Pick_Callback(handles.Pick,[],handles)
+    case 'downarrow'
+        stnext_Callback(handles.stnext,[],handles)
+    case 'uparrow'
+        stLast_Callback(handles.stLast,[],handles)
+    case 'r'
+        Dr_Callback(handles.Dr,[],handles)
+    case 'g'
+        Dg_Callback(handles.Dg,[],handles)
+    case 'space'
+        NextEv_Callback(hObject, eventdata, handles)        
+    otherwise
+end
+
+
+% --- Executes on mouse press over figure background, over a disabled or
+% --- inactive control, or over an axes background.
+function figure1_WindowButtonDownFcn(hObject, eventdata, handles)
+% hObject    handle to figure1 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+userdata=get(gcf,'userdata');
+par =userdata.par;
+switch (get(gcbf,'SelectionType'))
+    case 'alt'
+        Pick_Callback(handles.Pick,[],handles)
+    case 'normal'
+%         par=plotdisp(par);
+    otherwise
+end
+
+% --- Executes on scroll wheel click while the figure is in focus.
+function figure1_WindowScrollWheelFcn(hObject, eventdata, handles)
+% hObject    handle to figure1 (see GCBO)
+% eventdata  structure with the following fields (see MATLAB.UI.FIGURE)
+%	VerticalScrollCount: signed integer indicating direction and number of clicks
+%	VerticalScrollAmount: number of lines scrolled for each click
+% handles    structure with handles and user data (see GUIDATA)
+count = eventdata.VerticalScrollCount;
+if count==-1
+    Lev_Callback(hObject, eventdata, handles)
+elseif count==1
+    NextEv_Callback(hObject, eventdata, handles)
+end
+
+
+% --- Executes on mouse press over axes background.
+function figdsp1_ButtonDownFcn(hObject, eventdata, handles)
+% hObject    handle to figdsp1 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+test=1;
