@@ -187,9 +187,9 @@ par.vavg=par.vredu;
 par.kdat=kdat;
 %--find all stations in the given region--
 sta = rsta(goodstID);
-nst = length(gsta);
+ngsts = length(gsta);
 k=0;
-for ist=1:nst   %station
+for ist=1:ngsts   %station
     [subarr,idx,dsmax]=Findsta(gsta,sta,ist,par);
     kmaxi=kmaxs(idx);
     if length(subarr)<5
