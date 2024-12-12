@@ -8,10 +8,10 @@ clear
 close all;
 par=aa_WGM_parameters; % load parameters
 par.is_parfor =0; 
-par.is_figure = 0;
+par.is_figure = 1;
 par.is_overwrite = 1;
 par.sacstr=['*' par.cmp '.sac'];
-dataF = dir([par.ev_sac_rootpath par.fs '2007*']); 
+dataF = dir([par.ev_sac_rootpath par.fs '20*']); 
 
 
 fs=par.fs;
@@ -44,7 +44,7 @@ delete(para_WVPICK)
 
 
 function autoWVPICK(kevi,para_WVPICK)
-load(para_WVPICK);
+load(para_WVPICK); %#ok<*LOAD>
 dataF=par.dataF; %#ok<*NODEF>
 sacstr=par.sacstr;
 fs=par.fs;
@@ -210,7 +210,7 @@ for i=1:length(sts)
     int=(mit:mxt);
     int(int>length(sts(i).dat))=[];
     int(int<1)=[];
-    if isnan(max(wv.ei(i,int)))
+    if isnan(max(wv.ei(i,int)))||max(wv.ei(i,int))==0
         continue
     end
     kmax0(i) = (find(wv.ei(i,:)==max(wv.ei(i,int))));
@@ -234,7 +234,7 @@ for i=1:length(sts)
     int=(mit:mxt);
     int(int>length(sts(i).dat))=[];
     int(int<1)=[];
-    if isnan(max(wv.ei(i,int)))
+    if isnan(max(wv.ei(i,int)))||max(wv.ei(i,int))==0
         continue
     end
     kmaxs=findmaxima(wv.ei(i,:),5);
@@ -259,7 +259,13 @@ wv.SNRs=SNRs;
 wv.vg=vg;
 wv.goodsta=zeros(1,length(vg));
 evstdist=[sts.dis];
-gd1 = SNRs>=par.SNR & abs(vg-wv.mvg)<=par.dvg & vg>par.vgmin & vg<par.vgmax & evstdist>=par.ev_minDist & evstdist<=par.ev_maxDist;
+gd1 = SNRs>=par.SNR & ...
+    abs(vg-wv.mvg)<=par.dvg & ...
+    vg>par.vgmin & ...
+    vg<par.vgmax & ...
+    evstdist>=par.ev_minDist & ...
+    evstdist<=par.ev_maxDist &...
+    ~isnan(kmax0);
 wv.goodsta(gd1)=1;
 wv.mvg = median(vg(wv.goodsta==1));
 wv.ktmax=max(kmax0);
@@ -267,7 +273,7 @@ wv.ktmin=min(kmax0);
 wv.kmax0=wv.kmax0;
 
 %% plot picking results
-if is_figure && par.isparfor==0
+if is_figure && par.is_parfor==0
    plotQwave(wv,par);
     figure(11)
     drawnow
@@ -474,7 +480,7 @@ else
             int2=(-int2:int2)+wvQ.kmax0(i);
             int2(int2<1)=[];
             int2(int2>length(wvQ.ei(i,:)))=[];
-            if isempty(int2)
+            if isempty(int2)||isnan(wvQ.kmax0(i))
                 plot(X,Y,'color',[255 90 0]/255)
                 continue
             end
