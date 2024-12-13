@@ -102,9 +102,6 @@ save(fout1,'wvpick')
 
 
 
-
-
-
 function [st] = readevent(datapath,saclist,stinfo)
 ist=0;
 stnms=stinfo.stnm;
@@ -195,8 +192,10 @@ par.vgmax=par.vglen(2);
 kmax0(1:length(sts))=nan;
 vg(1:length(sts))=0;
 SNRs(1:length(sts))=0;
+SNRs2(1:length(sts))=0;
 gd1(1:length(sts))=0;
 datFlg=0; %#ok<*NASGU>
+
 for i=1:length(sts)
     wf = bpfilt(sts(i).dat,sts(i).dt,fwin(1),fwin(2));
     ei = abs(hilbert(wf));
@@ -217,15 +216,20 @@ for i=1:length(sts)
     vg(i) = wv.dist(i)/(wv.begtime(i)+kmax0(i)*sts(i).dt);
 end
 vg(isnan(vg))=[];
+
 vg(abs(vg-median(vg))>par.dvg|vg>=par.vgmax|vg<=par.vgmin)=[];
+vg(abs(vg-median(vg))>par.dvg|vg>=par.vgmax|vg<=par.vgmin)=[];
+vg(abs(vg-median(vg))>par.dvg|vg>=par.vgmax|vg<=par.vgmin)=[];
+
 if isempty(vg)
     datFlg=0;
     return
 end
 
+
 maxVg=min([par.vgmax,median(vg)+1]);
 minVg=max([par.vgmin,median(vg)-1]);
-
+WvLength=median(vg)/mean(fwin)*10;
 
 for i=1:length(sts)
     %time windows (par.vbg-par.ved)
@@ -244,14 +248,21 @@ for i=1:length(sts)
     kmax0(i)=kmaxs(kmxID);
     vg(i) = kvgs(kmxID);
     %time windows with 20 wavelength
-    int2=round(mean(10./fwin)/sts(i).dt);
+    int2=round(mean(20./fwin)/sts(i).dt);
     int2=(-int2:int2)+kmax0(i);
     int2(int2<1)=[];
     int2(int2>length(wv.ei(i,:)))=[];
     SNRs(i)= max(wv.ei(i,int2))/mean([wv.ei(i,int2(end)+1:length(wv.ei(i,:))),wv.ei(i,1:int2(1))]);
+    SNRs2(i)= 10*log10(mean(wv.ei(i,int2))/(mean([wv.ei(i,int2(end)+1:length(wv.ei(i,:))),wv.ei(i,1:int2(1))].^(1/10)))^10);
 end
+vgd=vg;
 
-mvg= median(vg);
+vgd(abs(vgd-median(vgd))>par.dvg|vgd>=par.vgmax|vgd<=par.vgmin)=[];
+vgd(abs(vgd-median(vgd))>par.dvg|vgd>=par.vgmax|vgd<=par.vgmin)=[];
+vgd(abs(vgd-median(vgd))>par.dvg|vgd>=par.vgmax|vgd<=par.vgmin)=[];
+vgd(abs(vgd-median(vgd))>par.dvg|vgd>=par.vgmax|vgd<=par.vgmin)=[];
+
+mvg= median(vgd);
 wv.dt=sts(1).dt;
 wv. kmax0= kmax0;
 wv.mvg = mvg;
@@ -259,13 +270,17 @@ wv.SNRs=SNRs;
 wv.vg=vg;
 wv.goodsta=zeros(1,length(vg));
 evstdist=[sts.dis];
+
 gd1 = SNRs>=par.SNR & ...
+    SNRs2>=par.SNR & ...
     abs(vg-wv.mvg)<=par.dvg & ...
     vg>par.vgmin & ...
     vg<par.vgmax & ...
     evstdist>=par.ev_minDist & ...
     evstdist<=par.ev_maxDist &...
+    evstdist>=WvLength & ...
     ~isnan(kmax0);
+
 wv.goodsta(gd1)=1;
 wv.mvg = median(vg(wv.goodsta==1));
 wv.ktmax=max(kmax0);
@@ -389,7 +404,7 @@ hold off
 
 figure(12)
 dist=wvQ.dist;
-mvg = mean(wvQ.vg);
+mvg = wvQ.mvg;
 h=plot(dist(wvQ.goodsta==1),wvQ.vg(wvQ.goodsta==1),'o');
 hold on
 set(h,'MarkerFaceColor',[0.4 0.4 0.7],'MarkerEdgeColor',[0.5 0.5 0.5])
